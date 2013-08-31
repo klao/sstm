@@ -25,11 +25,30 @@ source-repository head
 
 library
   ghc-options: -Wall
-
   build-depends:
       base >= 4.6 && < 5
     , stm == 2.*
-    , transformers
-
   exposed-modules:
     Control.Concurrent.SSTM
+
+executable shortestPaths
+  main-is: shortestPaths.hs
+  hs-source-dirs: . example
+  ghc-options: -Wall
+  build-depends:
+      base >= 4.6 && < 5
+    , containers
+    , stm == 2.*
+    , transformers
+    , lens
+    , async
+  other-modules: Control.Concurrent.SSTM
+
+executable bellmanFord
+  main-is: bellmanFord.hs
+  hs-source-dirs: . example
+  ghc-options: -Wall
+  build-depends:
+      base >= 4.6 && < 5
+    , vector
+  other-modules: Control.Concurrent.SSTM

@@ -5,8 +5,12 @@ module Control.Concurrent.SSTM (
   , sTest   -- Mainly for testing
   , toSignalled
   , readTChanSig
+  , writeTChanSig
   , readTMVarSig
+  , putTMVarSig
   , waitBlockedSig
+  , readTVarSig
+  , writeTVarSig
 
   , BlockVar
   , newBlockVarIO
@@ -19,6 +23,7 @@ module Control.Concurrent.SSTM (
   , Signalled
   , runSignalled
   , runSignalledUnsafe
+  , sigAtomically
   , signalled
   , waitAllBlocked
   ) where
@@ -85,9 +90,25 @@ readTChanSig :: TChan a -> SSTM a
 {-# INLINE readTChanSig #-}
 readTChanSig ch = SSTM (isEmptyTChan ch) (readTChan ch)
 
+writeTChanSig :: TChan a -> a -> SSTM ()
+{-# INLINE writeTChanSig #-}
+writeTChanSig ch x = SSTM (return False) (writeTChan ch x)
+
 readTMVarSig :: TMVar a -> SSTM a
 {-# INLINE readTMVarSig #-}
 readTMVarSig var = SSTM (isEmptyTMVar var) (readTMVar var)
+
+putTMVarSig :: TMVar a -> a -> SSTM ()
+{-# INLINE putTMVarSig #-}
+putTMVarSig var x = SSTM (not <$> isEmptyTMVar var) (putTMVar var x)
+
+readTVarSig :: TVar a -> SSTM a
+{-# INLINE readTVarSig #-}
+readTVarSig var = SSTM (return False) (readTVar var)
+
+writeTVarSig :: TVar a -> a -> SSTM ()
+{-# INLINE writeTVarSig #-}
+writeTVarSig var x = SSTM (return False) (writeTVar var x)
 
 waitBlockedSig ::  BlockVar -> SSTM ()
 {-# INLINE waitBlockedSig #-}
@@ -147,6 +168,10 @@ runSignalledUnsafe :: Signalled a -> IO a
 runSignalledUnsafe prog = do
   bvar <- newBlockVarIO
   runReaderT prog bvar
+
+sigAtomically :: STM a -> Signalled a
+{-# INLINE sigAtomically #-}
+sigAtomically = signalled . toSignalled
 
 -- This is the equivalent of 'atomically' in our Signalled STM world.
 signalled :: SSTM a -> Signalled a
