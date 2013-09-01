@@ -39,13 +39,12 @@ newNode registry = do
   inCh <- newTChanIO
   outCh <- atomically $ newBroadcastTChan -- Bug in STM, see: http://ghc.haskell.org/trac/ghc/ticket/7986
   dist <- newTVarIO infiniteDist
-  let n = Node inCh outCh dist
   _ <- async $ runSignalled registry $ forever $ do
     d <- signalled $ readTChanSig inCh
     current <- signalled $ readTVarSig dist
     when (d < current) $ do signalled $ writeTVarSig dist d
                             signalled $ writeTChanSig outCh d
-  return n
+  return $ Node inCh outCh dist
 
 --------------------------------------------------------------------------------
 -- Edge
@@ -60,12 +59,11 @@ newEdge :: Node -> Node -> Length -> BlockRegistry -> IO Edge
 newEdge na nb len registry = do
   inCh <- atomically $ dupTChan $ na ^. nOutgoing
   let outCh = nb ^. nIncoming
-  let e = Edge inCh outCh len
   _ <- async $ runSignalled registry $ forever $ do
     -- TODO(klao): add a way to change edge lengths too!
     d <- signalled $ readTChanSig inCh
     signalled $ writeTChanSig outCh (d+len)
-  return e
+  return $ Edge inCh outCh len
 
 --------------------------------------------------------------------------------
 -- Graph
